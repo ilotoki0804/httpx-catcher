@@ -29,11 +29,12 @@ class RejectDict(dict):
 class AsyncCatcherTransport(httpx.AsyncHTTPTransport):
     logger = DEFAULT_LOGGER
 
-    def __init__(self, *args, shelf: MutableMapping, mode: ModeType, **kwargs) -> None:
+    def __init__(self, *args, shelf: MutableMapping, mode: ModeType, flush_limit: int | None = None, **kwargs) -> None:
         super().__init__(*args[1:], verify=ssl.create_default_context(), **kwargs)
         self.shelf = shelf
         self.mode = mode
         self.flush_immediately: bool = False
+        self.flush_limit: int | None = flush_limit
         self._keys: dict[ContentKey, str] = self.shelf.setdefault("__keys__", {})
         self._waiting_flush: deque[tuple[httpx.Request, httpx.Response]] = deque([])
 
@@ -76,7 +77,7 @@ class AsyncCatcherTransport(httpx.AsyncHTTPTransport):
         # content와 await 사이가 remote한 아주 일부 경우 (썸네일 다운로드 등) flushing으로 부족함.
         await response.aread()
         self._waiting_flush.append((request, response))
-        if self.flush_immediately:
+        if self.flush_immediately or self.flush_limit is not None and len(self._waiting_flush) >= self.flush_limit:
             self.flush()
 
     def find_request(self, request: httpx.Request) -> httpx.Response:
@@ -115,12 +116,13 @@ def init_transport(db_path: PathLike, mode: ModeType):
                 transport.close()
 
 
-def install(db_path: PathLike, mode: ModeType):
+def install(db_path: PathLike, mode: ModeType, flush_limit: int | None = 20):
     import atexit
     import httpc
 
     transport_initializer = init_transport(db_path, mode)
     transport = transport_initializer.__enter__()
     atexit.register(transport_initializer.__exit__, None, None, None)
+    transport.flush_limit = flush_limit
     # monkey patching transport
     httpc.AsyncClient.__init__.__kwdefaults__["transport"] = transport
