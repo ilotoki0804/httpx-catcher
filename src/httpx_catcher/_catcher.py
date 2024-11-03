@@ -119,6 +119,18 @@ def init_transport(db_path: PathType, mode: ModeType):
 
 def install(db_path: PathType, mode: ModeType, flush_limit: int | None = 20):
     import atexit
+    import httpx
+
+    transport_initializer = init_transport(db_path, mode)
+    transport = transport_initializer.__enter__()
+    atexit.register(transport_initializer.__exit__, None, None, None)
+    transport.flush_limit = flush_limit
+    # monkey patching transport
+    httpx.AsyncClient.__init__.__kwdefaults__["transport"] = transport
+
+
+def install_httpc(db_path: PathType, mode: ModeType, flush_limit: int | None = 20):
+    import atexit
     import httpc
 
     transport_initializer = init_transport(db_path, mode)
