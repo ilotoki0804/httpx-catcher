@@ -12,6 +12,7 @@ from typing import Literal
 
 import httpx
 
+type PathType = PathLike | str | bytes
 type ContentKey = tuple[str, str, bytes]
 type ModeType = Literal["store", "use", "hybrid"]
 
@@ -105,7 +106,7 @@ class AsyncCatcherTransport(httpx.AsyncHTTPTransport):
 
 
 @contextmanager
-def init_transport(db_path: PathLike, mode: ModeType):
+def init_transport(db_path: PathType, mode: ModeType):
     with dbm.sqlite3.open(db_path, "c") as db:
         with Shelf(db, writeback=False) as shelf:
             shelf.cache = RejectDict()  # type: ignore # no caching on shelf
@@ -116,7 +117,7 @@ def init_transport(db_path: PathLike, mode: ModeType):
                 transport.close()
 
 
-def install(db_path: PathLike, mode: ModeType, flush_limit: int | None = 20):
+def install(db_path: PathType, mode: ModeType, flush_limit: int | None = 20):
     import atexit
     import httpc
 
