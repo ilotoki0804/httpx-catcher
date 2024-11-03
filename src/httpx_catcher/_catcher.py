@@ -113,3 +113,14 @@ def init_transport(db_path: PathLike, mode: ModeType):
                 yield transport
             finally:
                 transport.close()
+
+
+def install(db_path: PathLike, mode: ModeType):
+    import atexit
+    import httpc
+
+    transport_initializer = init_transport(db_path, mode)
+    transport = transport_initializer.__enter__()
+    atexit.register(transport_initializer.__exit__, None, None, None)
+    # monkey patching transport
+    httpc.AsyncClient.__init__.__kwdefaults__["transport"] = transport
