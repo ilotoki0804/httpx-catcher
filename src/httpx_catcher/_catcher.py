@@ -1,4 +1,3 @@
-import dbm.sqlite3
 import logging
 import random
 import ssl
@@ -11,6 +10,8 @@ from shelve import Shelf
 from typing import Literal
 
 import httpx
+
+from ._dbm_sqlite import open as dbm_open
 
 type PathType = PathLike | str | bytes
 type ContentKey = tuple[str, str, bytes]
@@ -106,8 +107,8 @@ class AsyncCatcherTransport(httpx.AsyncHTTPTransport):
 
 
 @contextmanager
-def init_transport(db_path: PathType, mode: ModeType):
-    with dbm.sqlite3.open(db_path, "c") as db:
+def init_transport(db_path: PathType, mode: ModeType, table_name: str = "Dict"):
+    with dbm_open(db_path, "c", table=table_name) as db:
         with Shelf(db, writeback=False) as shelf:
             shelf.cache = RejectDict()  # type: ignore # no caching on shelf
             transport = AsyncCatcherTransport(shelf=shelf, mode=mode)
