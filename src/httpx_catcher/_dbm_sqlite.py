@@ -22,7 +22,6 @@ def _normalize_uri(path):
 
 
 class _Database(MutableMapping):
-
     def __init__(self, path, /, *, flag, mode, table="Dict"):
         if hasattr(self, "_cx"):
             raise error(_ERR_REINIT)
@@ -72,7 +71,7 @@ class _Database(MutableMapping):
 
     def _build_queries(self, table):
         if not table.isidentifier():
-            raise ValueError(f"Table name must be identifier, not {table!r}")
+            raise ValueError(f"Table name must be an identifier, not {table!r}")
         if table.startswith("sqlite_"):
             raise ValueError(
                 "Table name should not start with 'sqlite_', "
@@ -153,5 +152,9 @@ def open(filename, /, flag="r", mode=0o666, table="Dict"):
 
     The optional 'mode' parameter is the Unix file access mode of the database;
     only used when creating a new database. Default: 0o666.
+
+    The optional 'table' parameter specifies table name to use.
+    The table name should be an identifier and not starts with 'sqlite_'.
+    Default: "Dict"
     """
     return _Database(filename, flag=flag, mode=mode, table=table)
