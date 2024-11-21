@@ -15,7 +15,7 @@ from ._dbm_sqlite import open as dbm_open
 
 type PathType = PathLike | str | bytes
 type ContentKey = tuple[str, str, bytes]
-type ModeType = Literal["store", "use", "hybrid"]
+type ModeType = Literal["store", "use", "hybrid", "passive"]
 
 DEFAULT_LOGGER = logging.getLogger(__name__)
 _installed = False
@@ -104,7 +104,9 @@ class AsyncCatcherTransport(httpx.AsyncHTTPTransport):
                 return self.find_request(request)
 
         response = await super().handle_async_request(request)
-        await self.store_requests(request, response)
+        if self.mode != "passive":
+            await self.store_requests(request, response)
+
         return response
 
 
