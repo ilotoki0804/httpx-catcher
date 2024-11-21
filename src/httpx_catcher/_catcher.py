@@ -18,6 +18,8 @@ type ContentKey = tuple[str, str, bytes]
 type ModeType = Literal["store", "use", "hybrid"]
 
 DEFAULT_LOGGER = logging.getLogger(__name__)
+_installed = False
+_httpc_installed = False
 
 
 class RejectDict(dict):
@@ -119,6 +121,10 @@ def init_transport(db_path: PathType, mode: ModeType, table_name: str = "Dict"):
 
 
 def install(db_path: PathType, mode: ModeType, flush_limit: int | None = 20):
+    global _installed
+    if _installed:
+        return
+
     import atexit
     import httpx
 
@@ -129,8 +135,14 @@ def install(db_path: PathType, mode: ModeType, flush_limit: int | None = 20):
     # monkey patching transport
     httpx.AsyncClient.__init__.__kwdefaults__["transport"] = transport
 
+    _installed = True
+
 
 def install_httpc(db_path: PathType, mode: ModeType, flush_limit: int | None = 20):
+    global _httpc_installed
+    if _httpc_installed:
+        return
+
     import atexit
     import httpc
 
@@ -140,3 +152,5 @@ def install_httpc(db_path: PathType, mode: ModeType, flush_limit: int | None = 2
     transport.flush_limit = flush_limit
     # monkey patching transport
     httpc.AsyncClient.__init__.__kwdefaults__["transport"] = transport
+
+    _httpc_installed = True
