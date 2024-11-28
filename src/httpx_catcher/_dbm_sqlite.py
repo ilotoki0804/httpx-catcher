@@ -78,6 +78,15 @@ class _Database(MutableMapping):
                 "since it's reserved for internal use in sqlite"
             )
 
+        # TODO: method, url, content 모두 분리해 sql을 완전히 활용하기
+        # self._build_table = f"""
+        # CREATE TABLE IF NOT EXISTS {table} (
+        #     method TEXT UNIQUE NOT NULL,
+        #     url TEXT UNIQUE NOT NULL,
+        #     content BLOB UNIQUE NOT NULL,
+        #     value BLOB NOT NULL
+        # )
+        # """
         self._build_table = f"""
         CREATE TABLE IF NOT EXISTS {table} (
             key BLOB UNIQUE NOT NULL,
