@@ -27,7 +27,7 @@ class AsyncCatcherTransport(httpx.AsyncHTTPTransport):
         mode: ModeType,
         *,
         verify: VerifyType | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         verify = ssl.create_default_context() if verify is None else verify
         super().__init__(verify=verify, **kwargs)
@@ -71,7 +71,7 @@ class AsyncCatcherTransport(httpx.AsyncHTTPTransport):
         return response
 
 
-def install(db_path: PathType, mode: ModeType, flush_limit: int | None = 20):
+def install(db_path: PathType, mode: ModeType):
     global _installed
     if _installed:
         return
@@ -88,7 +88,7 @@ def install(db_path: PathType, mode: ModeType, flush_limit: int | None = 20):
     _installed = True
 
 
-def install_httpc(db_path: PathType, mode: ModeType, flush_limit: int | None = 20):
+def install_httpc(db_path: PathType, mode: ModeType):
     global _httpc_installed
     if _httpc_installed:
         return
