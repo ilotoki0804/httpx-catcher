@@ -62,7 +62,20 @@ class AsyncCatcherTransport(httpx.AsyncHTTPTransport):
         request: httpx.Request,
     ) -> httpx.Response:
         if self.mode == "use":
-            return self.find_request(request)
+            try:
+                return self.find_request(request)
+            except KeyError:
+                content = await request.aread()
+                method = "" if request.method == "GET" else request.method + " "
+                if not content:
+                    raise ValueError(
+                        f"Could not find a {method}response for {request.url}")
+                elif len(content) <= 20:
+                    raise ValueError(
+                        f"Could not find a {method}response for {request.url} (with content: {content!r})")
+                else:
+                    raise ValueError(
+                        f"Could not find a {method}response for {request.url} (with {len(content)} length content)")
 
         if self.mode == "hybrid":
             with suppress(KeyError):
