@@ -2,7 +2,7 @@ import asyncio
 from pathlib import Path
 import httpc
 import httpx
-from httpx_catcher import AsyncCatcherTransport, TransactionDatabase
+from httpx_catcher import AsyncCatcherTransport, TransactionDatabase, DBError
 import pytest
 
 RESOURCE_DIR = Path(__file__).parent.joinpath("resource")
@@ -39,7 +39,12 @@ async def async_test_catcher():
     db_path = RESOURCE_DIR / "test.db"
     with AsyncCatcherTransport.with_db(db_path, "hybrid") as transport:
         async with httpc.AsyncClient(transport=transport) as client:
-            await client.get("https://www.google.com", headers={"hello": "world"})
+            res = await client.get("https://www.google.com", headers={"hello": "world"})
             req = httpx.Request("GET", "https://www.google.com", headers={"hello": "world"})
             assert transport.db[req]
+
+            # test dropping table
+            transport.db.drop()
+            with pytest.raises(DBError, match="no such table: transactions"):
+                transport.db[req] = res
     db_path.unlink(missing_ok=True)

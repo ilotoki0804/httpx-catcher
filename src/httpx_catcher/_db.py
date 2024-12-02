@@ -12,7 +12,7 @@ import typing
 import httpx
 
 
-class error(OSError):
+class DBError(OSError):
     pass
 
 
@@ -37,7 +37,7 @@ class TransactionDatabase(MutableMapping[httpx.Request, httpx.Response]):
         self._protocol = protocol
 
         if hasattr(self, "_cx"):
-            raise error(_ERR_REINIT)
+            raise DBError(_ERR_REINIT)
 
         path = Path(os.fsdecode(path))
         match flag:
@@ -63,7 +63,7 @@ class TransactionDatabase(MutableMapping[httpx.Request, httpx.Response]):
         try:
             self._cx = sqlite3.connect(uri, autocommit=True, uri=True)
         except sqlite3.Error as exc:
-            raise error(str(exc))
+            raise DBError(str(exc))
 
         # This is an optimization only; it's ok if it fails.
         with suppress(sqlite3.OperationalError):
@@ -76,11 +76,11 @@ class TransactionDatabase(MutableMapping[httpx.Request, httpx.Response]):
 
     def _execute(self, *args, **kwargs):
         if not self._cx:
-            raise error(_ERR_CLOSED)
+            raise DBError(_ERR_CLOSED)
         try:
             return closing(self._cx.execute(*args, **kwargs))
         except sqlite3.Error as exc:
-            raise error(str(exc))
+            raise DBError(str(exc))
 
     def _build_queries(self, table: str) -> None:
         if not table.isidentifier():
@@ -119,6 +119,7 @@ class TransactionDatabase(MutableMapping[httpx.Request, httpx.Response]):
             AND content = CAST(? AS BLOB)
         )"""
         self._iter_keys = f"SELECT (method, url, headers, content) FROM {table}"
+        self._drop_table = f"DROP TABLE {table}"
 
     @staticmethod
     def _normalize_uri(path: Path) -> str:
@@ -168,12 +169,15 @@ class TransactionDatabase(MutableMapping[httpx.Request, httpx.Response]):
                 for row in cu:
                     yield self._assemble_request(row)
         except sqlite3.Error as exc:
-            raise error(str(exc))
+            raise DBError(str(exc))
 
     def close(self) -> None:
         if self._cx:
             self._cx.close()
             self._cx = None
+
+    def drop(self) -> None:
+        self._execute(self._drop_table)
 
     def keys(self) -> list[httpx.Request]:
         return list(super().keys())
