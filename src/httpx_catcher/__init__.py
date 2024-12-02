@@ -1,10 +1,11 @@
-from ._catcher import AsyncCatcherTransport, ModeType, init_transport, install, install_httpc
+from ._catcher import AsyncCatcherTransport, ModeType, install, install_httpc
+from ._db import TransactionDatabase
 
 __version__ = "0.1.0"
 __all__ = [
     "AsyncCatcherTransport",
     "ModeType",
-    "init_transport",
+    "TransactionDatabase",
     "install",
     "install_httpc",
 ]
