@@ -20,6 +20,7 @@ _httpc_installed = False
 
 class AsyncCatcherTransport(httpx.AsyncHTTPTransport):
     logger = DEFAULT_LOGGER
+    valid_modes = "store", "use", "hybrid", "passive"
 
     def __init__(
         self,
@@ -29,6 +30,9 @@ class AsyncCatcherTransport(httpx.AsyncHTTPTransport):
         verify: VerifyType | None = None,
         **kwargs,
     ) -> None:
+        if mode not in self.valid_modes:
+            raise ValueError(f"mode should be within {self.valid_modes}, not {mode!r}.")
+
         verify = ssl.create_default_context() if verify is None else verify
         super().__init__(verify=verify, **kwargs)
         self.db = db
