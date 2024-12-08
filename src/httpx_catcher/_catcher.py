@@ -44,7 +44,7 @@ class AsyncCatcherTransport(httpx.AsyncHTTPTransport):
         with TransactionDatabase(db_path, table_name, flag="c") as db:
             yield cls(db=db, mode=mode)
 
-    async def store_requests(self, request: httpx.Request, response: httpx.Response) -> None:
+    async def store_async_requests(self, request: httpx.Request, response: httpx.Response) -> None:
         # content에 대한 fetching이 무조건 끝나도록 강제함.
         # 대부분의 경우에는 flushing만으로도 충분하지만
         # content와 await 사이가 remote한 아주 일부 경우 (썸네일 다운로드 등) flushing으로 부족함.
@@ -57,10 +57,7 @@ class AsyncCatcherTransport(httpx.AsyncHTTPTransport):
         # response.stream = None
         return response
 
-    async def handle_async_request(
-        self,
-        request: httpx.Request,
-    ) -> httpx.Response:
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         if self.mode == "use":
             try:
                 return self.find_request(request)
@@ -83,7 +80,7 @@ class AsyncCatcherTransport(httpx.AsyncHTTPTransport):
 
         response = await super().handle_async_request(request)
         if self.mode != "passive":
-            await self.store_requests(request, response)
+            await self.store_async_requests(request, response)
 
         return response
 
