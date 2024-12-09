@@ -177,7 +177,10 @@ class TransactionDatabase(MutableMapping[httpx.Request, httpx.Response]):
             self._cx = None
 
     def drop(self) -> None:
-        self._execute(self._drop_table)
+        try:
+            self._execute(self._drop_table)
+        except sqlite3.Error as exc:
+            raise DBError(str(exc))
 
     def keys(self) -> list[httpx.Request]:
         return list(super().keys())
